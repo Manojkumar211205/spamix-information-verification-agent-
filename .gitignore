@@ -17,3 +17,6 @@ ENV/
 # OS files
 .DS_Store
 Thumbs.db
+echo ".env" >> .gitignore
+echo "mcp_server/.env" >> .gitignore
+echo "application_agent/.env" >> .gitignore
