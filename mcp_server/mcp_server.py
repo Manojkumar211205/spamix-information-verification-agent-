@@ -1,7 +1,7 @@
 from mcp.server.fastmcp import FastMCP
 from .agent import *
-from tools.tools.fact_checker import fact_checker
-from tools.tools.research_tool import research_tool
+from .tools.tools.fact_checker import fact_checker
+from .tools.tools.research_tool import research_tool
 
 # Initialize FastMCP server
 mcp = FastMCP("custom_server")
