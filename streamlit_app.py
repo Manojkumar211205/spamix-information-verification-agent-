@@ -1650,7 +1650,7 @@ if st.session_state.current_page == 'home':
             print(f"Error processing agent_handler: {e}")
             st.write("Debug info:", f"Error processing agent_handler: {e}")
 
-            st.session_state.chatbot_messages.append({"type": "system", "message": "Sorry, an error occurred. Please try again."})
+            st.session_state.chatbot_messages.append({"type": "system", "message": e})
         finally:
             # Reset processing flag
             st.session_state.processing_message = False
