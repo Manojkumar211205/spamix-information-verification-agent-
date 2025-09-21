@@ -6,6 +6,10 @@ from tools.tools.research_tool import research_tool
 # Initialize FastMCP server
 mcp = FastMCP("custom_server")
 
+
+async def start_server():
+    """Start MCP server for in-process usage."""
+    return mcp
 @mcp.tool()
 async def check_url(url: str) -> dict:
     """Check the status or content of a given URL.
@@ -72,8 +76,5 @@ async def research_topic(query: str, arxiv_max_results: int = 10, wikipedia_max_
 
 
 
-if __name__ == "__main__":
-    
-    # Run MCP with stdio transport
-    mcp.run(transport="stdio")
+
 
