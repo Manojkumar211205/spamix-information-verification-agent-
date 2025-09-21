@@ -4,6 +4,7 @@ import json
 import praw
 from ...config.settings import GOOGLE_API_KEY, GEMINI_API_KEY, REDDIT_CLIENT_ID, REDDIT_CLIENT_SECRET, REDDIT_REFRESH_TOKEN, REDDIT_USER_AGENT, TAVILY_API_KEY
 
+
 # Configure Gemini
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
@@ -11,13 +12,23 @@ model = genai.GenerativeModel('gemini-1.5-flash')
 # Base endpoint for Google Fact Check Tools API
 BASE_URL = "https://factchecktools.googleapis.com/v1alpha1/claims:search"
 
-# Initialize Reddit
-reddit = praw.Reddit(
-    client_id=REDDIT_CLIENT_ID,
-    client_secret=REDDIT_CLIENT_SECRET,
-    refresh_token=REDDIT_REFRESH_TOKEN,
-    user_agent=REDDIT_USER_AGENT
-)
+# Reddit client will be initialized lazily when needed
+reddit = None
+
+def get_reddit_client():
+    """Initialize Reddit client lazily with proper error handling"""
+    global reddit
+    if reddit is None:
+        if not all([REDDIT_CLIENT_ID, REDDIT_CLIENT_SECRET, REDDIT_REFRESH_TOKEN, REDDIT_USER_AGENT]):
+            raise Exception("Reddit credentials not configured. Please set REDDIT_CLIENT_ID, REDDIT_CLIENT_SECRET, REDDIT_REFRESH_TOKEN, and REDDIT_USER_AGENT environment variables.")
+        
+        reddit = praw.Reddit(
+            client_id=REDDIT_CLIENT_ID,
+            client_secret=REDDIT_CLIENT_SECRET,
+            refresh_token=REDDIT_REFRESH_TOKEN,
+            user_agent=REDDIT_USER_AGENT
+        )
+    return reddit
 
 def fact_check_search(query, page_size=10):
     """Search for fact-checks using Google's Fact Check Tools API"""
@@ -41,7 +52,8 @@ def search_reddit(query, limit=10):
     """Search Reddit for relevant content"""
     content_list = []
     try:
-        for submission in reddit.subreddit("all").search(query, limit=limit):
+        reddit_client = get_reddit_client()
+        for submission in reddit_client.subreddit("all").search(query, limit=limit):
             content_list.append({
                 'title': submission.title,
                 'content': submission.selftext,
@@ -111,7 +123,7 @@ def fact_check_with_gemini_google(user_prompt, fact_check_data):
 
     Respond ONLY in JSON format with exactly these two keys:
     {{
-        "result": true or false,
+        "status": true or false,
         "reason": "detailed explanation of why the statement is true or false based on the fact-check data"
     }}
 
@@ -127,7 +139,7 @@ def fact_check_with_gemini_google(user_prompt, fact_check_data):
         return response.text.strip()
     except Exception as e:
         return json.dumps({
-            "result": False,
+            "status": False,
             "reason": f"Error in fact-checking analysis: {str(e)}"
         })
 
@@ -154,7 +166,7 @@ def fact_check_with_gemini_reddit(user_prompt, reddit_data):
 
     Respond ONLY in JSON format with exactly these two keys:
     {{
-        "result": true or false,
+        "status": true or false,
         "reason": "detailed explanation of why the statement is true or false based on the Reddit content"
     }}
 
@@ -170,7 +182,7 @@ def fact_check_with_gemini_reddit(user_prompt, reddit_data):
         return response.text.strip()
     except Exception as e:
         return json.dumps({
-            "result": False,
+            "status": False,
             "reason": f"Error in Reddit fact-checking analysis: {str(e)}"
         })
 
@@ -199,7 +211,7 @@ def fact_check_with_gemini_tavily(user_prompt, tavily_data):
 
     Respond ONLY in JSON format with exactly these two keys:
     {{
-        "result": true or false,
+        "status": true or false,
         "reason": "detailed explanation of why the statement is true or false based on the web content"
     }}
 
@@ -216,7 +228,7 @@ def fact_check_with_gemini_tavily(user_prompt, tavily_data):
         return response.text.strip()
     except Exception as e:
         return json.dumps({
-            "result": False,
+            "status": False,
             "reason": f"Error in Tavily fact-checking analysis: {str(e)}"
         })
 
@@ -264,21 +276,21 @@ def fact_checker(statement: str, reddit_limit: int = 10, tavily_max_results: int
             try:
                 # Clean the response by removing markdown code blocks if present
                 cleaned_result = google_fact_check_result.strip()
-                if cleaned_result.startswith('```json'):
-                    cleaned_result = cleaned_result[7:]  # Remove ```json
-                if cleaned_result.endswith('```'):
-                    cleaned_result = cleaned_result[:-3]  # Remove ```
+                if cleaned_result.startswith('json'):
+                    cleaned_result = cleaned_result[7:]  # Remove json
+                if cleaned_result.endswith(''):
+                    cleaned_result = cleaned_result[:-3]  # Remove 
                 cleaned_result = cleaned_result.strip()
                 
                 google_analysis = json.loads(cleaned_result)
             except json.JSONDecodeError:
                 google_analysis = {
-                    "result": False,
+                    "status": False,
                     "reason": f"Could not parse Google fact-check response: {google_fact_check_result}"
                 }
         else:
             google_analysis = {
-                "result": False,
+                "status": False,
                 "reason": google_error or "No fact-check data found in Google's database"
             }
         
@@ -289,21 +301,21 @@ def fact_checker(statement: str, reddit_limit: int = 10, tavily_max_results: int
             try:
                 # Clean the response by removing markdown code blocks if present
                 cleaned_result = reddit_fact_check_result.strip()
-                if cleaned_result.startswith('```json'):
-                    cleaned_result = cleaned_result[7:]  # Remove ```json
-                if cleaned_result.endswith('```'):
-                    cleaned_result = cleaned_result[:-3]  # Remove ```
+                if cleaned_result.startswith('json'):
+                    cleaned_result = cleaned_result[7:]  # Remove json
+                if cleaned_result.endswith(''):
+                    cleaned_result = cleaned_result[:-3]  # Remove 
                 cleaned_result = cleaned_result.strip()
                 
                 reddit_analysis = json.loads(cleaned_result)
             except json.JSONDecodeError:
                 reddit_analysis = {
-                    "result": False,
+                    "status": False,
                     "reason": f"Could not parse Reddit fact-check response: {reddit_fact_check_result}"
                 }
         else:
             reddit_analysis = {
-                "result": False,
+                "status": False,
                 "reason": reddit_error or "No relevant content found on Reddit"
             }
         
@@ -314,28 +326,28 @@ def fact_checker(statement: str, reddit_limit: int = 10, tavily_max_results: int
             try:
                 # Clean the response by removing markdown code blocks if present
                 cleaned_result = tavily_fact_check_result.strip()
-                if cleaned_result.startswith('```json'):
-                    cleaned_result = cleaned_result[7:]  # Remove ```json
-                if cleaned_result.endswith('```'):
-                    cleaned_result = cleaned_result[:-3]  # Remove ```
+                if cleaned_result.startswith('json'):
+                    cleaned_result = cleaned_result[7:]  # Remove json
+                if cleaned_result.endswith(''):
+                    cleaned_result = cleaned_result[:-3]  # Remove 
                 cleaned_result = cleaned_result.strip()
                 
                 tavily_analysis = json.loads(cleaned_result)
             except json.JSONDecodeError:
                 tavily_analysis = {
-                    "result": False,
+                    "status": False,
                     "reason": f"Could not parse Tavily fact-check response: {tavily_fact_check_result}"
                 }
         else:
             tavily_analysis = {
-                "result": False,
+                "status": False,
                 "reason": tavily_error or "No relevant web content found through Tavily search"
             }
         
         # Determine overall status based on all three sources
-        google_supports = google_analysis.get("result", False)
-        reddit_supports = reddit_analysis.get("result", False)
-        tavily_supports = tavily_analysis.get("result", False)
+        google_supports = google_analysis.get("status", False)
+        reddit_supports = reddit_analysis.get("status", False)
+        tavily_supports = tavily_analysis.get("status", False)
         overall_status = google_supports or reddit_supports or tavily_supports
         
         # Create comprehensive reason
