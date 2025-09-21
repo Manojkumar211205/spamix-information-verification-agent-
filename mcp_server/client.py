@@ -34,19 +34,33 @@ class MCPClient:
             )
         return "\n".join(tool_descriptions)
 
+    def extract_text_content(self, result):
+        """Extract text content from MCP TextContent objects or return as-is if already a dict."""
+        if hasattr(result, 'text'):
+            # It's a TextContent object, extract the text
+            try:
+                return json.loads(result.text)
+            except json.JSONDecodeError:
+                return {"result": result.text}
+        elif isinstance(result, list) and len(result) > 0 and hasattr(result[0], 'text'):
+            # It's a list of TextContent objects, extract the first one
+            try:
+                return json.loads(result[0].text)
+            except json.JSONDecodeError:
+                return {"result": result[0].text}
+        else:
+            # It's already a dict or other format, return as-is
+            return result
+
     async def call_tool_manually(self, tool_name: str, tool_args: dict):
         """Manually call a tool with the given arguments."""
         try:
             result = await self.server.call_tool(tool_name, tool_args)
-
-            # If result is JSON, parse it
-            if result and isinstance(result, str):
-                try:
-                    return json.loads(result)
-                except json.JSONDecodeError:
-                    return {"result": result}
-
-            return result
+            
+            # Extract clean content from MCP response for all tools
+            clean_result = self.extract_text_content(result)
+            return clean_result
+            
         except Exception as e:
             print(f"\nError calling tool {tool_name}: {str(e)}")
             return {"error": str(e)}
