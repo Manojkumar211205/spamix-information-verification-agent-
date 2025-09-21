@@ -1,7 +1,7 @@
 import asyncio
 from typing import Optional
 import json
-from mcp_server import start_server   # Import your server directly
+from .mcp_server import start_server   # Import your server directly
 
 
 class MCPClient:
