@@ -10,7 +10,7 @@ from mcp_server.client import MCPClient
 mcp_client = MCPClient()
 
 async def init_mcp_connection():
-    await mcp_client.connect_to_server(r"mcp_server\mcp_server.py")
+    await mcp_client.connect_to_server()
 
 async def close_mcp_connection():
     await mcp_client.cleanup()
