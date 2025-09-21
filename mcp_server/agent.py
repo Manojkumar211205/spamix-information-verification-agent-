@@ -1,6 +1,6 @@
 from groq import Groq # Make sure you have the Groq SDK installed
-from config.settings import LLM_API_KEY, LLM_MODEL
-from tools.tools_registry import TOOLS
+from .config.settings import LLM_API_KEY, LLM_MODEL
+from .tools.tools_registry import TOOLS
 import json
 import requests
 from bs4 import BeautifulSoup
