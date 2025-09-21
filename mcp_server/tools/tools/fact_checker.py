@@ -2,7 +2,7 @@ import requests
 import google.generativeai as genai
 import json
 import praw
-from config.settings import GOOGLE_API_KEY, GEMINI_API_KEY, REDDIT_CLIENT_ID, REDDIT_CLIENT_SECRET, REDDIT_REFRESH_TOKEN, REDDIT_USER_AGENT, TAVILY_API_KEY
+from ...config.settings import GOOGLE_API_KEY, GEMINI_API_KEY, REDDIT_CLIENT_ID, REDDIT_CLIENT_SECRET, REDDIT_REFRESH_TOKEN, REDDIT_USER_AGENT, TAVILY_API_KEY
 
 # Configure Gemini
 genai.configure(api_key=GEMINI_API_KEY)

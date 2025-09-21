@@ -1,5 +1,5 @@
 import requests
-from config.settings import VIRUSTOTAL_KEY
+from ...config.settings import VIRUSTOTAL_KEY
 
 def virustotal(url: str):
     """Check URL using VirusTotal API"""

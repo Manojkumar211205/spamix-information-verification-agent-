@@ -1,5 +1,5 @@
 import requests
-from config.settings import GOOGLE_SAFE_BROWSING_KEY
+from ...config.settings import GOOGLE_SAFE_BROWSING_KEY
 
 def google_safe_browsing(url: str):
     """Check URL using Google Safe Browsing API"""

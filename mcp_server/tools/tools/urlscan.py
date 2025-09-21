@@ -1,5 +1,5 @@
 import requests
-from config.settings import URLSCAN_KEY
+from ...config.settings import URLSCAN_KEY
 
 def urlscan(url: str):
     """Check URL using URLScan.io API"""
